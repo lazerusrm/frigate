@@ -3,6 +3,7 @@ import threading
 import datetime
 import json
 import sqlite3
+import asyncio
 from multiprocessing import Queue
 from multiprocessing.synchronize import Event as MpEvent
 from typing import Dict, Optional
@@ -259,6 +260,18 @@ class EventProcessor(threading.Thread):
         if event_type == EventStateEnum.end:
             del self.events_in_process[event_data["id"]]
             self.event_end_publisher.publish((event_data["id"], camera, updated_db))
+            if (
+                self.config.chekt_notifier
+                and event_data["has_clip"]
+                and not event_data["false_positive"]
+                and (camera_config := self.config.cameras.get(camera))
+                and camera_config.chekt
+                and camera_config.chekt.chan_num
+            ):
+                asyncio.create_task(
+                    self.config.chekt_notifier.send_event(event_data, camera_config)
+                )
+                logger.debug(f"Triggered Chekt notifier for event {event_data['id']}")
     
     def _finish_event(self, event_id: str) -> None:
         # ... (existing code to finish event)
@@ -275,7 +288,7 @@ class EventProcessor(threading.Thread):
             asyncio.create_task(
                 self.app.chekt_notifier.send_event(event, camera_config)
             )
-            
+
     def handle_external_detection(
         self, event_type: EventStateEnum, event_data: Event
     ) -> None:

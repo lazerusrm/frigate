@@ -104,13 +104,19 @@ stream_info_retriever = StreamInfoRetriever()
 class ChektConfig(BaseModel):
     enabled: bool = Field(default=False, title="Enable Chekt integration.")
     host: Optional[str] = Field(default=None, title="Chekt server hostname or IP.")
-    port: int = Field(default=80, title="Chekt server port.")
+    port: int = Field(default=443, title="Chekt server port.", ge=1, le=65535)
     token: Optional[str] = Field(default=None, title="Chekt API bearer token.")
-    rate_limit_seconds: int = Field(default=20, title="Minimum seconds between alerts per channel.")
-    video_duration: int = Field(default=10, title="Maximum video clip duration in seconds.")
+    rate_limit_seconds: int = Field(default=20, title="Minimum seconds between alerts per channel.", ge=1)
+    video_duration: int = Field(default=10, title="Maximum video clip duration in seconds.", ge=1)
+
+    @model_validator(mode="after")
+    def validate_required(self):
+        if self.enabled and (not self.host or not self.token):
+            raise ValueError("Host and token are required when Chekt is enabled")
+        return self
 
 class CameraChektConfig(BaseModel):
-    chan_num: Optional[str] = Field(default=None, title="Chekt channel number for this camera.")
+    chan_num: Optional[int] = Field(default=None, title="Chekt channel number for this camera.", ge=1)
     draw_bounding_boxes: bool = Field(default=True, title="Draw bounding boxes on exported videos.")
 
 class RuntimeMotionConfig(MotionConfig):

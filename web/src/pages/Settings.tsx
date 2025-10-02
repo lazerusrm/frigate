@@ -450,19 +450,19 @@ function CameraSelectButton({
 
   return (
     <div className="p-4">
-      <Tabs>
-        <Tab label="System">
-          <SystemSettings />
-        </Tab>
-        <Tab label="Cameras">
-          <CameraListSettings />
-        </Tab>
-        {/* New Tab */}
+    <Tabs>
+      <Tab label="System">
+        <SystemSettings />
+      </Tab>
+      <Tab label="Cameras">
+        <CameraListSettings />
+      </Tab>
+      {isAdmin && config?.chekt?.enabled && (
         <Tab label="Chekt">
           <ChektSettings />
         </Tab>
-        {/* ... existing tabs */}
-      </Tabs>
-    </div>
+      )}
+    </Tabs>
+  </div>
   );
 }

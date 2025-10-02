@@ -112,7 +112,14 @@ class FrigateApp:
         self.ptz_metrics: dict[str, PTZMetrics] = {}
         self.processes: dict[str, int] = {}
         self.embeddings: Optional[EmbeddingsContext] = None
-        self.chekt_notifier: Optional[ChektNotifier] = None
+        try:
+            self.chekt_notifier: Optional[ChektNotifier] = None
+            if self.config.chekt and self.config.chekt.enabled:
+                self.chekt_notifier = ChektNotifier(self.config)
+                logger.info("Chekt notifier initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize Chekt notifier: {e}")
+        
         self.config = config
 
     def ensure_dirs(self) -> None:
