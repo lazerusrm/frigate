@@ -1,8 +1,11 @@
 import logging
 import threading
+import datetime
+import json
+import sqlite3
 from multiprocessing import Queue
 from multiprocessing.synchronize import Event as MpEvent
-from typing import Dict
+from typing import Dict, Optional
 
 from frigate.comms.events_updater import EventEndPublisher, EventUpdateSubscriber
 from frigate.config import FrigateConfig
@@ -256,7 +259,23 @@ class EventProcessor(threading.Thread):
         if event_type == EventStateEnum.end:
             del self.events_in_process[event_data["id"]]
             self.event_end_publisher.publish((event_data["id"], camera, updated_db))
+    
+    def _finish_event(self, event_id: str) -> None:
+        # ... (existing code to finish event)
 
+        # New Chekt integration hook
+        if (
+            self.app.chekt_notifier
+            and event["has_clip"]
+            and not event["false_positive"]
+            and (camera_config := self.config.cameras.get(event["camera"]))
+            and camera_config.chekt
+            and camera_config.chekt.chan_num
+        ):
+            asyncio.create_task(
+                self.app.chekt_notifier.send_event(event, camera_config)
+            )
+            
     def handle_external_detection(
         self, event_type: EventStateEnum, event_data: Event
     ) -> None:

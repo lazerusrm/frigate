@@ -4,16 +4,19 @@ import multiprocessing as mp
 import os
 import secrets
 import shutil
+import signal
 from multiprocessing import Queue
 from multiprocessing.managers import DictProxy, SyncManager
 from multiprocessing.synchronize import Event as MpEvent
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Callable
 
 import psutil
 import uvicorn
 from peewee_migrate import Router
 from playhouse.sqlite_ext import SqliteExtDatabase
+
+from frigate.notifiers.chekt import ChektNotifier
 
 from frigate.api.auth import hash_password
 from frigate.api.fastapi_app import create_fastapi_app
@@ -109,6 +112,7 @@ class FrigateApp:
         self.ptz_metrics: dict[str, PTZMetrics] = {}
         self.processes: dict[str, int] = {}
         self.embeddings: Optional[EmbeddingsContext] = None
+        self.chekt_notifier: Optional[ChektNotifier] = None
         self.config = config
 
     def ensure_dirs(self) -> None:
@@ -523,8 +527,13 @@ class FrigateApp:
 
         # Set soft file limits.
         set_file_limit()
+        
+        self.chekt_notifier: Optional[ChektNotifier] = None
+        if self.config.chekt and self.config.chekt.enabled:
+            self.chekt_notifier = ChektNotifier(self.config)
 
         # Start frigate services.
+        self.init_config()
         self.init_camera_metrics()
         self.init_queues()
         self.init_database()
@@ -551,7 +560,6 @@ class FrigateApp:
         self.start_event_cleanup()
         self.start_record_cleanup()
         self.start_watchdog()
-
         self.init_auth()
 
         try:

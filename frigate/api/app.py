@@ -52,11 +52,14 @@ from frigate.util.services import (
 )
 from frigate.version import VERSION
 
+from .chekt import router as chekt_router
+
 logger = logging.getLogger(__name__)
 
 
 router = APIRouter(tags=[Tags.app])
 
+app.include_router(chekt_router)
 
 @router.get("/", response_class=PlainTextResponse)
 def is_healthy():

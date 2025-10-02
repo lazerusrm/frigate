@@ -19,13 +19,14 @@ from pydantic import (
 from ruamel.yaml import YAML
 from typing_extensions import Self
 
-from frigate.const import REGEX_JSON
+from frigate.const import REGEX_JSON, AUDIO_MIN_RMS 
 from frigate.detectors import DetectorConfig, ModelConfig
 from frigate.detectors.detector_config import BaseDetectorConfig
 from frigate.plus import PlusApi
 from frigate.util.builtin import (
     deep_merge,
     get_ffmpeg_arg_list,
+    get_tz_modifiers,
 )
 from frigate.util.config import (
     StreamInfoRetriever,
@@ -100,6 +101,17 @@ DEFAULT_DETECT_DIMENSIONS = {"width": 1280, "height": 720}
 # stream info handler
 stream_info_retriever = StreamInfoRetriever()
 
+class ChektConfig(BaseModel):
+    enabled: bool = Field(default=False, title="Enable Chekt integration.")
+    host: Optional[str] = Field(default=None, title="Chekt server hostname or IP.")
+    port: int = Field(default=80, title="Chekt server port.")
+    token: Optional[str] = Field(default=None, title="Chekt API bearer token.")
+    rate_limit_seconds: int = Field(default=20, title="Minimum seconds between alerts per channel.")
+    video_duration: int = Field(default=10, title="Maximum video clip duration in seconds.")
+
+class CameraChektConfig(BaseModel):
+    chan_num: Optional[str] = Field(default=None, title="Chekt channel number for this camera.")
+    draw_bounding_boxes: bool = Field(default=True, title="Draw bounding boxes on exported videos.")
 
 class RuntimeMotionConfig(MotionConfig):
     raw_mask: Union[str, List[str]] = ""
@@ -309,9 +321,11 @@ def verify_lpr_and_face(
 
 class FrigateConfig(FrigateBaseModel):
     version: Optional[str] = Field(default=None, title="Current config version.")
+    chekt: Optional[ChektConfig] = None
     safe_mode: bool = Field(
         default=False, title="If Frigate should be started in safe mode."
     )
+
 
     # Fields that install global state should be defined first, so that their validators run first.
     environment_vars: EnvVars = Field(

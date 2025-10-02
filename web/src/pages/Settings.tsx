@@ -49,6 +49,14 @@ import { useTranslation } from "react-i18next";
 import TriggerView from "@/views/settings/TriggerView";
 import { CameraNameLabel } from "@/components/camera/CameraNameLabel";
 
+import { h } from 'preact';
+import { useState } from 'preact/hooks';
+import { Tab, Tabs } from '@/components/Tabs';
+import SystemSettings from '@/components/settings/SystemSettings';
+import CameraListSettings from '@/components/settings/CameraListSettings';
+
+import ChektSettings from '@/components/settings/ChektSettings';
+
 const allSettingsViews = [
   "ui",
   "enrichments",
@@ -438,5 +446,23 @@ function CameraSelectButton({
       <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
       <DropdownMenuContent>{content}</DropdownMenuContent>
     </DropdownMenu>
+  );
+
+  return (
+    <div className="p-4">
+      <Tabs>
+        <Tab label="System">
+          <SystemSettings />
+        </Tab>
+        <Tab label="Cameras">
+          <CameraListSettings />
+        </Tab>
+        {/* New Tab */}
+        <Tab label="Chekt">
+          <ChektSettings />
+        </Tab>
+        {/* ... existing tabs */}
+      </Tabs>
+    </div>
   );
 }
